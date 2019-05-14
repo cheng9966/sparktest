@@ -1,4 +1,4 @@
 # sparktest
-火花核心，火花sql，火花流
+spark core,spark sql，spark streaming
 
-通过火花的开发，了解大数据的简单使用
+通过spark的开发，了解大数据的简单使用
