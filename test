@@ -1,0 +1,59 @@
+package com.huajie.yanshi
+
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.{SparkConf, SparkContext}
+
+
+object SQL {
+
+  def main(args: Array[String]): Unit = {
+
+    System.setProperty("hadoop.home.dir", "D:\\software\\hadoop-2.7.3")
+    System.setProperty("HADOOP_USER_NAME", "lan")
+    Logger.getLogger("org").setLevel(Level.ERROR)
+    /*
+        * 逻辑： 读取json文件 将处理后的结果生成json文件，可直接灌入hive里
+        * */
+
+    val conf = new SparkConf().setAppName("SQLDemo1").setMaster("local[2]")
+
+    val sc = new SparkContext(conf)
+
+    val sqlContext = new SQLContext(sc)
+
+    //创建DataFrame（ RDD + schema = DataFrame ）
+    val lines:RDD[String] = sc.parallelize(List("1,chengyang1,30,99", "2,chengyang2,18,9999", "3,chengyang3,35,99", "4,chengyang4,26,90"))
+//
+
+    //将RDD和Boy这个类进行关联
+    val boyRDD = lines.map(line => {
+      val fields = line.split(",")
+      val id = fields(0).toLong
+      val name = fields(1)
+      val age = fields(2).toInt
+      val fv = fields(3).toDouble
+      (id, name, age, fv)
+    })
+
+    //将关联的boy类的RDD转换成DataFrame
+    //导入隐式转换
+    import sqlContext.implicits._
+
+    val df1: DataFrame = boyRDD.toDF()
+
+
+    //使用SQL风格，那么必须注册一张表
+    df1.registerTempTable("tfboy")
+
+    //执行SQL
+    val df2: DataFrame = sqlContext.sql("SELECT * FROM tfboy WHERE _4 >= 99 ORDER BY  _3 ASC")
+
+    df2.show()
+//    df2.write.json("D:\\code\\mr_output\\user1.json")
+//    df2.write.parquet("D:\\code\\mr_output\\p1")
+    sc.stop()
+
+  }
+}
